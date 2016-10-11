@@ -1,4 +1,4 @@
-from django.contrib.auth import login as auth_login, logout as auth_logout, authenticate
+from django.contrib.auth import login, logout, authenticate
 from rest_framework import permissions
 from rest_framework import status
 from rest_framework import viewsets
@@ -36,9 +36,12 @@ class SessionsView(APIView):
 
     def post(self, request, *args, **kwargs):
         user = authenticate(email=request.POST.get('email'), password=request.POST.get('password'))
-        auth_login(request, user)
-        return Response(UsersSerializer(request.user).data, status=status.HTTP_200_OK)
+        print('User', user)
+        if not user:
+            return Response({}, status=status.HTTP_403_FORBIDDEN)
+        login(request, user)
+        return Response({}, status=status.HTTP_201_CREATED)
 
     def delete(self, request, *args, **kwargs):
-        auth_logout(request)
+        logout(request)
         return Response({}, status=status.HTTP_204_NO_CONTENT)
