@@ -36,9 +36,8 @@ class SessionsView(APIView):
 
     def post(self, request, *args, **kwargs):
         user = authenticate(email=request.POST.get('email'), password=request.POST.get('password'))
-        print('User', user)
         if not user:
-            return Response({}, status=status.HTTP_403_FORBIDDEN)
+            return Response({'error': 'Incorrect email / password combination entered. Please try again.'}, status=status.HTTP_403_FORBIDDEN)
         login(request, user)
         return Response({}, status=status.HTTP_201_CREATED)
 
