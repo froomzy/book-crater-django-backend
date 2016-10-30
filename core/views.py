@@ -34,6 +34,13 @@ class UsersViewSet(viewsets.ModelViewSet):
 class SessionsView(APIView):
     permission_classes = (AllowAny,)
 
+    def get(self, request, *args, **kwargs):
+        print(not request.user)
+        print(request.user.is_anonymous())
+        if request.user.is_anonymous():
+            return Response({'error': 'Session Expired'}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({}, status=status.HTTP_200_OK)
+
     def post(self, request, *args, **kwargs):
         user = authenticate(email=request.POST.get('email'), password=request.POST.get('password'))
         if not user:
