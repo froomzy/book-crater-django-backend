@@ -172,6 +172,10 @@ DATETIME_INPUT_FORMATS = [
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 
+# Media Settings
+MEDIA_ROOT = str(BASE_PATH / 'media')
+MEDIA_URL = '/media/'
+
 # Rest Framework Settings
 REST_FRAMEWORK = {
     'PAGE_SIZE': 25,

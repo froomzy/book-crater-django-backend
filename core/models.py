@@ -59,3 +59,15 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def get_full_name(self):
         return self.email
+
+
+class UserProfile(models.Model):
+    """
+    A model to hold the user account details (name, avatar, etc) for a particular user.
+    """
+    user = models.ForeignKey(to='core.User', null=False, blank=False)
+    avatar = models.FileField(upload_to='avatars', max_length=250)
+    full_name = models.CharField(max_length=250)
+
+    class Meta:
+        pass
