@@ -21,6 +21,9 @@ class UsersViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     permission_classes = (permissions.IsAuthenticated,)
 
+    def perform_create(self, serializer):
+        user = User.objects.create_user(**serializer.validated_data)
+
     def update(self, request, *args, **kwargs):
         return Response(data={'error': 'May not update user records'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -35,8 +38,6 @@ class SessionsView(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request, *args, **kwargs):
-        print(not request.user)
-        print(request.user.is_anonymous())
         if request.user.is_anonymous():
             return Response({'error': 'Session Expired'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response({}, status=status.HTTP_200_OK)
