@@ -10,6 +10,7 @@ django-cors-headers>=1.2.2
 
 # Python Addons
 arrow
-
+requests
+beautifulsoup4
 
 # Local Libraries

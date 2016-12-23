@@ -34,8 +34,15 @@ class UsersViewSet(viewsets.ModelViewSet):
         return Response(data={'error': 'May not delete user records'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class SessionsSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+
 class SessionsView(APIView):
     permission_classes = (AllowAny,)
+    resource_name = 'sessions'
+    serializer_class = SessionsSerializer
 
     def get(self, request, *args, **kwargs):
         if request.user.is_anonymous():
