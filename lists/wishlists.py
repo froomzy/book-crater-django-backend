@@ -27,7 +27,6 @@ def _extract_books(wishlist_page: BeautifulSoup):
 def _calculate_price(price_string: str):
     if price_string.startswith('NZ$'):
         currency = NZD
-        # numbers = price_string[3:]
         numbers = price_string[3:].splitlines()[0]
         price = float(numbers)
         return currency, price
