@@ -55,6 +55,11 @@ class PricesManager(models.Manager):
         price.save()
         return price
 
+    def set_price(self, currency, price, cost):
+        {
+            NZD: self.set_nzd_price
+        }.get(currency)(price, cost)
+
     def set_nzd_price(self, price: 'Prices', cost: float):
         price.nz_dollars = cost
         price.save()
