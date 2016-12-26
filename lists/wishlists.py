@@ -48,20 +48,9 @@ def _extract_books(wishlist_pages: List[BeautifulSoup]) -> List[BeautifulSoup]:
 
 
 def _calculate_price(price_string: str, currency: Currency) -> float:
-    price = price_string.splitlines()[0]
-    if currency == NZD:
-        numbers = price[3:]
-        price = float(numbers)
-        return price
-    if currency == GBP:
-        numbers = price[1:]
-        price = float(numbers)
-        return price
-    if currency == CZK:
-        numbers = price[:-3].replace(',', '.')
-        price = float(numbers)
-        return price
-    raise ValueError('Unhandled currency {currency}'.format(currency=currency.name))
+    price_string = price_string.splitlines()[0].replace(',', '.')
+    numbers = price_string[currency.string_slice]
+    return float(numbers)
 
 def _create_book(book: BeautifulSoup, currency: Currency) -> Books:
     """Create a Books from html."""
@@ -77,8 +66,8 @@ def _create_book(book: BeautifulSoup, currency: Currency) -> Books:
     return new_book
 
 
-def process_wishlist(url: str, currency: Currency) -> List[Books]:
-    """Given a url to a Wsihlist, return a list of ISBNs in that wishlist."""
+def process_wishlist(url: str, currency: Currency) -> List[str]:
+    """Given a url to a Wishlist, return a list of ISBNs in that wishlist."""
     results_list = []
     try:
         wishlist_page = _retrieve_wishlist(url=url, currency=currency)

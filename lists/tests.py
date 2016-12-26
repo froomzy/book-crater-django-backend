@@ -1,7 +1,7 @@
 from django.test import TestCase
 from requests import HTTPError
 
-from lists.constants import NZD, GBP, CZK
+from lists.constants import NZD, GBP, CZK, USD
 from lists.wishlists import process_wishlist, _retrieve_wishlist, _extract_books, _calculate_price
 
 one_hundred_books_isbns = [
@@ -121,6 +121,12 @@ class ProcessListTests(TestCase):
         self.assertEqual(2, len(results))
         self.assertEqual(['9781847923677', '9781785041273'], results)
 
+    def test_wishlist_with_two_books_using_czk(self):
+        url = 'http://www.bookdepository.com/wishlists/WF90L8'
+        results = process_wishlist(url=url, currency=CZK)
+        self.assertEqual(2, len(results))
+        self.assertEqual(['9781847923677', '9781785041273'], results)
+
     def test_wishlist_with_100_books(self):
         url = 'http://www.bookdepository.com/wishlists/WF9V76'
         results = process_wishlist(url=url, currency=NZD)
@@ -184,3 +190,15 @@ class ProcessListTests(TestCase):
                         '''
         price = _calculate_price(price_string=price_string, currency=CZK)
         self.assertEqual(price, 446.41)
+
+    def test_calculate_price_usd(self):
+        price_string = 'US$16.96'
+        price = _calculate_price(price_string=price_string, currency=USD)
+        self.assertEqual(price, 16.96)
+
+    def test_calculate_price_usd_handles_newline(self):
+        price_string = '''US$17.27
+                            US$18.48
+                        '''
+        price = _calculate_price(price_string=price_string, currency=USD)
+        self.assertEqual(price, 17.27)

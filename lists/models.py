@@ -1,6 +1,6 @@
 from django.db import models
 
-from lists.constants import NZD, GBP, USD, Currency
+from lists.constants import NZD, GBP, USD, Currency, CZK
 
 
 class BooksQuerySet(models.QuerySet):
@@ -8,14 +8,12 @@ class BooksQuerySet(models.QuerySet):
         return self.filter(isbn=isbn)
 
     def price_less_than(self, price: float, currency: Currency):
-        if NZD:
-            return self.filter(prices__nz_dollars__lte=price)
-        elif GBP:
-            return self.filter(prices__uk_pounds__lte=price)
-        elif USD:
-            return self.filter(prices__usd__lte=price)
-        else:
-            raise ValueError('Currency {currency} not supported'.format(currency=currency))
+        return {
+            NZD: self.filter(prices__nz_dollars__lte=price),
+            GBP: self.filter(prices__uk_pounds__lte=price),
+            USD: self.filter(prices__us_dollars__lte=price),
+            CZK: self.filter(prices__cz_koruna__lte=price),
+        }[currency]
 
 
 class BooksManager(models.Manager):
@@ -57,11 +55,29 @@ class PricesManager(models.Manager):
 
     def set_price(self, currency, price, cost):
         {
-            NZD: self.set_nzd_price
+            NZD: self.set_nzd_price,
+            GBP: self.set_gbp_price,
+            USD: self.set_usd_price,
+            CZK: self.set_czk_price,
         }.get(currency)(price, cost)
 
     def set_nzd_price(self, price: 'Prices', cost: float):
         price.nz_dollars = cost
+        price.save()
+        return price
+
+    def set_gbp_price(self, price: 'Prices', cost: float):
+        price.uk_pounds = cost
+        price.save()
+        return price
+
+    def set_usd_price(self, price: 'Prices', cost: float):
+        price.us_dollars = cost
+        price.save()
+        return price
+
+    def set_czk_price(self, price: 'Prices', cost: float):
+        price.cz_koruna = cost
         price.save()
         return price
 
@@ -70,7 +86,8 @@ class Prices(models.Model):
     book = models.OneToOneField(to='lists.Books', on_delete=models.CASCADE, primary_key=True)
     nz_dollars = models.DecimalField(verbose_name='NZ$', max_digits=12, decimal_places=2, blank=True, null=True)
     us_dollars = models.DecimalField(verbose_name='US$', max_digits=12, decimal_places=2, blank=True, null=True)
-    uk_pounds = models.DecimalField(verbose_name='UK£', max_digits=12, decimal_places=2, blank=True, null=True)
+    uk_pounds = models.DecimalField(verbose_name='£', max_digits=12, decimal_places=2, blank=True, null=True)
+    cz_koruna = models.DecimalField(verbose_name='Kč', max_digits=12, decimal_places=2, blank=True, null=True)
 
     class Meta:
         verbose_name_plural = 'prices'
