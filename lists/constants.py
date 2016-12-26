@@ -10,3 +10,4 @@ class Currency:
 NZD = Currency(name='New Zealand Dollars', abbreviation='NZD')
 USD = Currency(name='USA Dollars', abbreviation='USD')
 GBP = Currency(name='Great Britain Pounds', abbreviation='GBP')
+CZK = Currency(name='Czech Koruna', abbreviation='CZK')

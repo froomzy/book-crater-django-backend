@@ -1,13 +1,19 @@
+from typing import List, Tuple
+
 import requests
 from bs4 import BeautifulSoup
 from requests import HTTPError
 
-from lists.constants import NZD
+from lists.constants import NZD, Currency, GBP, CZK
 from lists.models import Books, Prices
 
 
-def _retrieve_wishlist(url: str):
-    response = requests.get(url=url)
+def _set_currency(url: str, currency: Currency, session: requests.Session):
+    session.post(url=url, data={'selectCurrency': currency.abbreviation})
+
+
+def _retrieve_page(url: str, session: requests.Session) -> BeautifulSoup:
+    response = session.get(url=url)
     # This will raise if there is any 4xx or 5xx status codes
     response.raise_for_status()
     # Need to see if we land on a wishlist page. If not, whinge
@@ -19,20 +25,46 @@ def _retrieve_wishlist(url: str):
     return BeautifulSoup(markup=response.text, features="lxml")
 
 
-def _extract_books(wishlist_page: BeautifulSoup):
-    books = wishlist_page.select('div.book-item')
+def _retrieve_wishlist(url: str, currency: Currency) -> List[BeautifulSoup]:
+    session = requests.Session()
+    pages = []
+    next_url = url
+    _set_currency(url=url, currency=currency, session=session)
+    while True:
+        page = _retrieve_page(url=next_url, session=session)
+        next = page.select('ul.pagination > li.next > a')
+        pages.append(page)
+        if not next:
+            break
+        next_url = next[0]['href']
+    return pages
+
+
+def _extract_books(wishlist_pages: List[BeautifulSoup]) -> List[BeautifulSoup]:
+    books = []
+    for page in wishlist_pages:
+        books += page.select('div.book-item')
     return books
 
 
-def _calculate_price(price_string: str):
-    if price_string.startswith('NZ$'):
-        currency = NZD
-        numbers = price_string[3:].splitlines()[0]
+def _calculate_price(price_string: str, currency: Currency) -> float:
+    price = price_string.splitlines()[0]
+    if currency == NZD:
+        numbers = price[3:]
         price = float(numbers)
-        return currency, price
+        return price
+    if currency == GBP:
+        numbers = price[1:]
+        price = float(numbers)
+        return price
+    if currency == CZK:
+        numbers = price[:-3].replace(',', '.')
+        price = float(numbers)
+        return price
+    raise ValueError('Unhandled currency {currency}'.format(currency=currency.name))
 
-
-def _create_book(book: BeautifulSoup):
+def _create_book(book: BeautifulSoup, currency: Currency) -> Books:
+    """Create a Books from html."""
     isbn = book.select('meta[itemprop="isbn"]')[0]['content']
     title = book.select('div.item-info h3 a')[0].text.strip()
     exiting_books = Books.objects.with_isbn(isbn=isbn)
@@ -40,20 +72,21 @@ def _create_book(book: BeautifulSoup):
         new_book = exiting_books.first()
     else:
         new_book = Books.objects.create(isbn=isbn, title=title)
-    currency, price = _calculate_price(price_string=book.select('div.item-info div.price-wrap p.price')[0].text.strip())
+    price = _calculate_price(price_string=book.select('div.item-info div.price-wrap p.price')[0].text.strip(), currency=currency)
     Prices.objects.set_price(currency=currency, price=new_book.prices, cost=price)
     return new_book
 
 
-def process_wishlist(url: str):
+def process_wishlist(url: str, currency: Currency) -> List[Books]:
+    """Given a url to a Wsihlist, return a list of ISBNs in that wishlist."""
     results_list = []
-    # Request the page, return a BS4 object of its html
-    wishlist_page = _retrieve_wishlist(url=url)
-    # Extract book objects from page, return as list
-    books = _extract_books(wishlist_page=wishlist_page)
-    # Iterate list, create book model from each (with prices??), add isbn to results list
+    try:
+        wishlist_page = _retrieve_wishlist(url=url, currency=currency)
+    except HTTPError:
+        # TODO (Dylan): Need to log out here
+        return []
+    books = _extract_books(wishlist_pages=wishlist_page)
     for book in books:
-        new_book = _create_book(book=book)
+        new_book = _create_book(book=book, currency=currency)
         results_list.append(new_book.isbn)
-    # Return results list
     return results_list
