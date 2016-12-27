@@ -1,5 +1,9 @@
+from typing import List
+
+from django.core.exceptions import ValidationError
 from django.db import models
 
+from core.models import User
 from lists.constants import NZD, GBP, USD, Currency, CZK
 
 
@@ -7,7 +11,18 @@ class BooksQuerySet(models.QuerySet):
     def with_isbn(self, isbn: str):
         return self.filter(isbn=isbn)
 
+    def with_isbn_in(self, isbns: List[str]):
+        return self.filter(isbn__in=isbns)
+
     def price_less_than(self, price: float, currency: Currency):
+        return {
+            NZD: self.filter(prices__nz_dollars__lt=price),
+            GBP: self.filter(prices__uk_pounds__lt=price),
+            USD: self.filter(prices__us_dollars__lt=price),
+            CZK: self.filter(prices__cz_koruna__lt=price),
+        }[currency]
+
+    def price_less_than_or_equal(self, price: float, currency: Currency):
         return {
             NZD: self.filter(prices__nz_dollars__lte=price),
             GBP: self.filter(prices__uk_pounds__lte=price),
@@ -96,3 +111,71 @@ class Prices(models.Model):
 
     def __str__(self):
         return 'Prices for {book}'.format(book=self.book)
+
+    def get_price_for_currency(self, currency: Currency) -> float:
+        return {
+            NZD: self.nz_dollars,
+            USD: self.us_dollars,
+            GBP: self.uk_pounds,
+            CZK: self.cz_koruna,
+        }[currency]
+
+
+def _validate_day_of_month(day_of_month):
+    if 0 < day_of_month <= 28:
+        return
+    raise ValidationError('Day of Month must be between 1 and 28')
+
+
+class ListsQuerySet(models.QuerySet):
+    def for_owner(self, user: User):
+        return self.filter(owner=user)
+
+
+class ListsManager(models.Manager):
+    def create(self, title: str, currency: Currency, spend: float, day_of_month: int, owner: User):
+        list = Lists()
+        list.title = title
+        list.currency = currency.abbreviation
+        list.spend = spend
+        list.day_of_month = day_of_month
+        list.owner = owner
+        list.save()
+        return list
+
+
+class Lists(models.Model):
+    title = models.CharField(max_length=1000, blank=False, null=False)
+    currency = models.CharField(max_length=1000, blank=False, null=False)
+    spend = models.DecimalField(max_digits=12, decimal_places=2, blank=False, null=False)
+    day_of_month = models.IntegerField(validators=[_validate_day_of_month], blank=False, null=False)
+    owner = models.ForeignKey(to='core.User')
+
+    objects = ListsManager.from_queryset(ListsQuerySet)()
+
+    def __str__(self):
+        return 'List {title} belonging to {user}'.format(title=self.title, user=self.owner)
+
+
+class WishListQuerySet(models.QuerySet):
+    def for_list(self, list: Lists):
+        return self.filter(list=list)
+
+
+class WishListManager(models.Manager):
+    def create(self, list: Lists, url: str) -> 'WishLists':
+        wishlist = WishLists()
+        wishlist.list = list
+        wishlist.url = url
+        wishlist.save()
+        return wishlist
+
+
+class WishLists(models.Model):
+    list = models.ForeignKey(to='lists.Lists', related_name='wishlists')
+    url = models.URLField(max_length=1000, blank=False, null=False)
+
+    objects = WishListManager.from_queryset(WishListQuerySet)()
+
+    def __str__(self):
+        return 'Wishlist at {url}'.format(url=self.url)

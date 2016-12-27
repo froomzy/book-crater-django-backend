@@ -1,7 +1,11 @@
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from requests import HTTPError
 
+from core.models import User
 from lists.constants import NZD, GBP, CZK, USD
+from lists.lists import generate_purchase_list
+from lists.models import _validate_day_of_month, Lists, WishLists
 from lists.wishlists import process_wishlist, _retrieve_wishlist, _extract_books, _calculate_price
 
 one_hundred_books_isbns = [
@@ -202,3 +206,74 @@ class ProcessListTests(TestCase):
                         '''
         price = _calculate_price(price_string=price_string, currency=USD)
         self.assertEqual(price, 17.27)
+
+
+class ListsTests(TestCase):
+    def test_validate_day_of_month(self):
+        to_small = -100
+        to_big = 100
+        min = 1
+        min_minus_one = 0
+        max = 28
+        max_plus_one = 29
+        self.assertIsNone(_validate_day_of_month(day_of_month=min))
+        self.assertIsNone(_validate_day_of_month(day_of_month=max))
+        with self.assertRaises(ValidationError):
+            _validate_day_of_month(day_of_month=min_minus_one)
+        with self.assertRaises(ValidationError):
+            _validate_day_of_month(day_of_month=max_plus_one)
+        with self.assertRaises(ValidationError):
+            _validate_day_of_month(day_of_month=to_big)
+        with self.assertRaises(ValidationError):
+            _validate_day_of_month(day_of_month=to_small)
+
+
+class PurchaseListTests(TestCase):
+    def test_list_with_one_book_returns_that_book(self):
+        user = User.objects.create_user(email='user@userville.com', password='Nope')
+        list = Lists.objects.create(title='Simple Test', owner=user, currency=NZD, spend=50.00, day_of_month=5)
+        wishlist = WishLists.objects.create(url='http://www.bookdepository.com/wishlists/WF90LH', list=list)
+        results = generate_purchase_list(list=list)
+        self.assertEqual(1, len(results))
+        self.assertEqual('9781408708989', results[0].isbn)
+
+    def test_list_with_one_book_returns_no_books(self):
+        user = User.objects.create_user(email='user@userville.com', password='Nope')
+        list = Lists.objects.create(title='Simple Test', owner=user, currency=NZD, spend=5.00, day_of_month=5)
+        wishlist = WishLists.objects.create(url='http://www.bookdepository.com/wishlists/WF90LH', list=list)
+        results = generate_purchase_list(list=list)
+        self.assertEqual(0, len(results))
+
+    def test_list_with_three_books_two_under_returns_those_two_books(self):
+        user = User.objects.create_user(email='user@userville.com', password='Nope')
+        list = Lists.objects.create(title='Simple Test', owner=user, currency=NZD, spend=18.00, day_of_month=5)
+        wishlist = WishLists.objects.create(url='http://www.bookdepository.com/wishlists/WF9YR0', list=list)
+        results = generate_purchase_list(list=list)
+        self.assertEqual(2, len(results))
+        self.assertCountEqual(['9780241003008', '9781853261589'], [book.isbn for book in results])
+
+    def test_list_with_three_books_two_under_returns_one_book(self):
+        user = User.objects.create_user(email='user@userville.com', password='Nope')
+        list = Lists.objects.create(title='Simple Test', owner=user, currency=NZD, spend=10.00, day_of_month=5)
+        wishlist = WishLists.objects.create(url='http://www.bookdepository.com/wishlists/WF9YR0', list=list)
+        results = generate_purchase_list(list=list)
+        self.assertEqual(1, len(results))
+        self.assertIn(results[0].isbn, ['9780241003008', '9781853261589'])
+
+    def test_list_with_two_wishlists_two_under_returns_one_both(self):
+        user = User.objects.create_user(email='user@userville.com', password='Nope')
+        list = Lists.objects.create(title='Simple Test', owner=user, currency=NZD, spend=16.00, day_of_month=5)
+        wishlist = WishLists.objects.create(url='http://www.bookdepository.com/wishlists/WF9Y9R', list=list)
+        wishlist = WishLists.objects.create(url='http://www.bookdepository.com/wishlists/WF9Y96', list=list)
+        results = generate_purchase_list(list=list)
+        self.assertEqual(2, len(results))
+        self.assertCountEqual(['9780241003008', '9781853261589'], [book.isbn for book in results])
+
+    def test_list_with_two_wishlists_with_duplicate_books_returns_one_book(self):
+        user = User.objects.create_user(email='user@userville.com', password='Nope')
+        list = Lists.objects.create(title='Simple Test', owner=user, currency=NZD, spend=80.00, day_of_month=5)
+        wishlist = WishLists.objects.create(url='http://www.bookdepository.com/wishlists/WF90LH', list=list)
+        wishlist = WishLists.objects.create(url='http://www.bookdepository.com/wishlists/WF90LH', list=list)
+        results = generate_purchase_list(list=list)
+        self.assertEqual(1, len(results))
+        self.assertEqual('9781408708989', results[0].isbn)

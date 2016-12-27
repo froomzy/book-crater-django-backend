@@ -12,3 +12,10 @@ NZD = Currency(name='New Zealand Dollars', abbreviation='NZD', slice=slice(3, No
 USD = Currency(name='USA Dollars', abbreviation='USD', slice=slice(3, None, None))
 GBP = Currency(name='Great Britain Pounds', abbreviation='GBP', slice=slice(1, None, None))
 CZK = Currency(name='Czech Koruna', abbreviation='CZK', slice=slice(0, -3, None))
+
+CURRENCIES = {
+    'NZD': NZD,
+    'USD': USD,
+    'GBP': GBP,
+    'CZK': CZK,
+}
