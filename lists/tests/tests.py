@@ -1,11 +1,21 @@
+import json
+from pathlib import Path
+from time import sleep
+
+import requests
+from bs4 import BeautifulSoup
+from django.core import mail
 from django.core.exceptions import ValidationError
+from django.template import Context
+from django.template.loader import get_template
 from django.test import TestCase
 from requests import HTTPError
 
+from core.emails import send_email
 from core.models import User
 from lists.constants import NZD, GBP, CZK, USD
-from lists.lists import generate_purchase_list
-from lists.models import _validate_day_of_month, Lists, WishLists
+from lists.lists import generate_purchase_list, send_purchase_list_email
+from lists.models import _validate_day_of_month, Lists, WishLists, Books, Prices
 from lists.wishlists import process_wishlist, _retrieve_wishlist, _extract_books, _calculate_price
 
 one_hundred_books_isbns = [
@@ -277,3 +287,82 @@ class PurchaseListTests(TestCase):
         results = generate_purchase_list(list=list)
         self.assertEqual(1, len(results))
         self.assertEqual('9781408708989', results[0].isbn)
+
+
+class PurchaseListEmailTests(TestCase):
+    def get_emails(self):
+        url = 'http://localhost:1080/email'
+        response = requests.get(url=url)
+        return json.loads(response.text)
+
+    def delete_emails(self):
+        url = 'http://localhost:1080/email/all'
+        response = requests.delete(url=url)
+
+    def test_can_send_email(self):
+        subject = 'Hello'
+        text_content = 'This is an email!'
+        recipients = ['dylan@dylan.com']
+        self.delete_emails()
+        send_email(subject=subject, recipients=recipients, text_content=text_content)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, subject)
+        self.assertEqual(mail.outbox[0].body, text_content)
+        self.assertEqual(mail.outbox[0].to, recipients)
+
+    def test_can_send_email_with_alternatives(self):
+        subject = 'Hello'
+        text_content = 'This is an email!'
+        html_content = '<p>This is an email!</p>'
+        recipients = ['dylan@dylan.com']
+        self.delete_emails()
+        send_email(subject=subject, recipients=recipients, text_content=text_content, html_content=html_content)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, subject)
+        self.assertEqual(mail.outbox[0].body, text_content)
+        self.assertEqual(mail.outbox[0].to, recipients)
+        self.assertEqual(mail.outbox[0].alternatives[0][0], html_content)
+        self.assertEqual(mail.outbox[0].alternatives[0][1], 'text/html')
+
+    def test_send_email_with_template_content(self):
+        subject = 'Template Email'
+        text_content = 'There is no text'
+
+        template = get_template('emails/email-base.html')
+        context = Context()
+        rendered = template.render(context=context)
+
+        html_content = rendered
+        recipients = ['dylan@dylan.com']
+        self.delete_emails()
+        send_email(subject=subject, recipients=recipients, text_content=text_content, html_content=html_content)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, subject)
+        self.assertEqual(mail.outbox[0].body, text_content)
+        self.assertEqual(mail.outbox[0].to, recipients)
+        self.assertEqual(mail.outbox[0].alternatives[0][0], html_content)
+        self.assertEqual(mail.outbox[0].alternatives[0][1], 'text/html')
+
+    def test_send_purchase_list_email_sends_right_number_of_books(self):
+        self.maxDiff = None
+        user = User.objects.create_user(email='user@userville.com', password='Nope')
+        list = Lists.objects.create(title='Simple Test', owner=user, currency=NZD, spend=80.00, day_of_month=5)
+        books = []
+        book = Books.objects.create(isbn='1234567890123', title='Title')
+        Prices.objects.set_nzd_price(price=book.prices, cost=10.00)
+        books.append(book)
+        book = Books.objects.create(isbn='0234567890023', title='Title 2')
+        Prices.objects.set_nzd_price(price=book.prices, cost=20.00)
+        books.append(book)
+        send_purchase_list_email(list=list, books=books, user=user)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Monthly Purchase List From Book Crater')
+        txt_path = Path(__file__).parent / 'test-text-generation-content.txt'
+        with txt_path.open() as txt:
+            self.assertEqual(txt.read(), mail.outbox[0].body)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+        self.assertEqual(mail.outbox[0].alternatives[0][1], 'text/html')
+
+        soup = BeautifulSoup(mail.outbox[0].alternatives[0][0], 'lxml')
+
+        self.assertEqual(2, len(soup.select('.book-item')))

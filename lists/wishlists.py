@@ -61,7 +61,11 @@ def _create_book(book: BeautifulSoup, currency: Currency) -> Books:
         new_book = exiting_books.first()
     else:
         new_book = Books.objects.create(isbn=isbn, title=title)
-    price = _calculate_price(price_string=book.select('div.item-info div.price-wrap p.price')[0].text.strip(), currency=currency)
+    print(book)
+    prices = book.select('div.item-info div.price-wrap p.price')
+    price = 0
+    if prices:
+        price = _calculate_price(price_string=prices[0].text.strip(), currency=currency)
     Prices.objects.set_price(currency=currency, price=new_book.prices, cost=price)
     return new_book
 

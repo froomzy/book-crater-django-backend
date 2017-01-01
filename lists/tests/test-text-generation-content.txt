@@ -1,0 +1,18 @@
+Hello there!
+We have sent you a list of books chosen from your provided wishlists. We hope
+you enjoy them, and we'll see you again next month.
+
+--------------------------------------------------------------------------------
+
+Title
+NZ$10.00
+Find it at http://www.bookdepository.com/basket/addisbn/isbn13/1234567890123
+
+Title 2
+NZ$20.00
+Find it at http://www.bookdepository.com/basket/addisbn/isbn13/0234567890023
+
+--------------------------------------------------------------------------------
+
+Generated for you by Book Crater
+http://book-crater.dylan-jenkinson.nz

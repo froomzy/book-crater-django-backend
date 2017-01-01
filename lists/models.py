@@ -49,6 +49,7 @@ class Books(models.Model):
     title = models.CharField(max_length=1000, blank=False, null=False)
 
     class Meta:
+        verbose_name = 'book'
         verbose_name_plural = 'books'
 
     objects = BooksManager.from_queryset(BooksQuerySet)()
@@ -105,6 +106,7 @@ class Prices(models.Model):
     cz_koruna = models.DecimalField(verbose_name='Kč', max_digits=12, decimal_places=2, blank=True, null=True)
 
     class Meta:
+        verbose_name = 'price'
         verbose_name_plural = 'prices'
 
     objects = PricesManager.from_queryset(PricesQuerySet)()
@@ -151,6 +153,10 @@ class Lists(models.Model):
     day_of_month = models.IntegerField(validators=[_validate_day_of_month], blank=False, null=False)
     owner = models.ForeignKey(to='core.User')
 
+    class Meta:
+        verbose_name = 'list'
+        verbose_name_plural = 'lists'
+
     objects = ListsManager.from_queryset(ListsQuerySet)()
 
     def __str__(self):
@@ -174,6 +180,10 @@ class WishListManager(models.Manager):
 class WishLists(models.Model):
     list = models.ForeignKey(to='lists.Lists', related_name='wishlists')
     url = models.URLField(max_length=1000, blank=False, null=False)
+
+    class Meta:
+        verbose_name = 'wish list'
+        verbose_name_plural = 'wish lists'
 
     objects = WishListManager.from_queryset(WishListQuerySet)()
 

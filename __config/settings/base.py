@@ -206,3 +206,8 @@ REST_FRAMEWORK = {
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = []
 CORS_ORIGIN_REGEX_WHITELIST = []
+
+EMAIL_PORT = 1025
+EMAIL_HOST = 'localhost'
+DEFAULT_FROM_EMAIL = 'book-crater@dylan-jenkinson.nz'
+SERVER_EMAIL = 'book-crater@dylan-jenkinson.nz'

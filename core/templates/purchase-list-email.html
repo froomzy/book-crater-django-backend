@@ -1,0 +1,29 @@
+{% extends 'emails/email-base.html' %}
+
+{% block preheader %}Here is your suggested list of books{% endblock preheader %}
+
+{% block email-body %}
+    <tr>
+        <td bgcolor="#ffffff">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                    <td style="padding: 40px; font-family: sans-serif; font-size: 15px; line-height: 20px; color: #555555;">
+                        Hello there! We have sent you a list of books choosen from your wishlists provided. We hope you enjoy them,
+                        and we'll see you again next month.
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+
+    <tr>
+        <td height="40" style="font-size: 0; line-height: 0;">
+            &nbsp;
+        </td>
+    </tr>
+
+    {% for book in books %}
+        {% include 'book-item.html' with url=url book=book only %}
+    {% endfor %}
+
+{% endblock email-body %}

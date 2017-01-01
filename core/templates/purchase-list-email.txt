@@ -1,0 +1,14 @@
+Hello there!
+We have sent you a list of books chosen from your provided wishlists. We hope
+you enjoy them, and we'll see you again next month.
+
+--------------------------------------------------------------------------------
+{% for book in books %}
+{{ book.title }}
+{{ book.price }}
+Find it at http://www.bookdepository.com/basket/addisbn/isbn13/{{ book.isbn }}
+{% endfor %}
+--------------------------------------------------------------------------------
+
+Generated for you by Book Crater
+http://book-crater.dylan-jenkinson.nz
