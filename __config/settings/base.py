@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+import raven
+
 BASE_PATH = Path(__file__).parents[2]
 BASE_DIR = str(BASE_PATH)
 
@@ -49,6 +51,7 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     'rest_framework',
     'corsheaders',
+    'raven.contrib.django.raven_compat',
 ]
 
 LOCAL_APPS = [
@@ -59,6 +62,7 @@ LOCAL_APPS = [
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
+    'raven.contrib.django.raven_compat.middleware.SentryResponseErrorIdMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -207,7 +211,68 @@ CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = []
 CORS_ORIGIN_REGEX_WHITELIST = []
 
+# Email Settings
+
 EMAIL_PORT = 1025
 EMAIL_HOST = 'localhost'
 DEFAULT_FROM_EMAIL = 'book-crater@dylan-jenkinson.nz'
 SERVER_EMAIL = 'book-crater@dylan-jenkinson.nz'
+# TODO (Dylan): Set up the sparkpost sending stuff. It might go into production settings, or it might go here
+
+# Sentry Settings
+
+RAVEN_CONFIG = {
+    'dsn': 'https://16b80969558d4006816a3aa387cedbcb:053c2684de8348098809c48f818a645f@sentry.io/127912',
+    'release': raven.fetch_git_sha(os.path.dirname(os.pardir)),
+    'site': 'Book Crater Django Backend',
+    'processors': (
+        'raven.processors.SanitizePasswordsProcessor',
+    )
+}
+
+# Logging Settings
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'root': {
+        'level': 'WARNING',
+        'handlers': ['sentry'],
+    },
+    'formatters': {
+        'verbose': {
+            'format': '[%(asctime)s] [%(levelname)8s]: --- %(message)s (%(module)s.%(filename)s:%(lineno)s)'
+        },
+        'basic': {
+            'format': '[%(levelname)8s]: --- %(message)s'
+        },
+    },
+    'handlers': {
+        'sentry': {
+            'level': 'ERROR', # To capture more than ERROR, change to WARNING, INFO, etc.
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose'
+        }
+    },
+    'loggers': {
+        'django.db.backends': {
+            'level': 'ERROR',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'raven': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+        'sentry.errors': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+            'propagate': False,
+        },
+    },
+}

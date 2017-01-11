@@ -362,7 +362,22 @@ class PurchaseListEmailTests(TestCase):
             self.assertEqual(txt.read(), mail.outbox[0].body)
         self.assertEqual(mail.outbox[0].to, [user.email])
         self.assertEqual(mail.outbox[0].alternatives[0][1], 'text/html')
-
         soup = BeautifulSoup(mail.outbox[0].alternatives[0][0], 'lxml')
-
         self.assertEqual(2, len(soup.select('.book-item')))
+
+    def test_send_purchase_list_email_no_books_(self):
+        self.maxDiff = None
+        user = User.objects.create_user(email='user@userville.com', password='Nope')
+        list = Lists.objects.create(title='Simple Test', owner=user, currency=NZD, spend=80.00, day_of_month=5)
+        wishlist = WishLists.objects.create(list=list, url='http://www.bookdepository.com/wishlists/WF9V76')
+        books = []
+        send_purchase_list_email(list=list, books=books, user=user)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].subject, 'Monthly Purchase List From Book Crater')
+        txt_path = Path(__file__).parent / 'test-text-generation-content-no-books.txt'
+        with txt_path.open() as txt:
+            self.assertEqual(txt.read(), mail.outbox[0].body)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+        self.assertEqual(mail.outbox[0].alternatives[0][1], 'text/html')
+        soup = BeautifulSoup(mail.outbox[0].alternatives[0][0], 'lxml')
+        self.assertEqual(0, len(soup.select('.book-item')))

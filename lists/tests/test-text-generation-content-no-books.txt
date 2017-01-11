@@ -3,16 +3,12 @@ We have sent you a list of books chosen from your provided wishlists. We hope
 you enjoy them, and we'll see you again next month.
 
 --------------------------------------------------------------------------------
-{% for book in books %}
-{{ book.title }}
-{{ book.price }}
-Find it at http://www.bookdepository.com/basket/addisbn/isbn13/{{ book.isbn }}
-{% empty %}
+
 We could not find any books in your wishlists that were available and fit under
 your maximum price limit. Why not go and check out your wishlist(s):
-{% for wishlist in list.wishlists.all %}
-{{ wishlist.url }}
-{% endfor %}{% endfor %}
+
+http://www.bookdepository.com/wishlists/WF9V76
+
 --------------------------------------------------------------------------------
 
 Generated for you by Book Crater

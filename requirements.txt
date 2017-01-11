@@ -13,5 +13,6 @@ arrow
 requests
 beautifulsoup4
 lxml
+raven
 
 # Local Libraries
