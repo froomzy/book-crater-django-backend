@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import DefaultRouter  # type: ignore
 
 from core.views import UsersViewSet, SessionsView
 

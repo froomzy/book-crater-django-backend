@@ -1,14 +1,13 @@
 from typing import List, IO, AnyStr
 
-from django.core.mail import EmailMessage, send_mail
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives  # type: ignore
 
 
-class Attachment():
-    def __init__(self, filename: str, data: IO[AnyStr], mime: str):
-        self.filename = filename
-        self.data = data
-        self.mime = mime
+class Attachment:
+    def __init__(self, filename: str, data: IO, mime: str) -> None:
+        self.filename = filename  # type: str
+        self.data = data  # type: IO
+        self.mime = mime  # type: str
 
 
 def send_email(recipients: List[str], subject: str, text_content: str = 'No plain text version privided.', html_content: str = None, attachments: List[Attachment] = None):

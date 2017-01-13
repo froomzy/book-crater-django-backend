@@ -1,4 +1,4 @@
-from rest_framework.authentication import SessionAuthentication
+from rest_framework.authentication import SessionAuthentication  # type: ignore
 
 
 class CraterSessionAuthentication(SessionAuthentication):

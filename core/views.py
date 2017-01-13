@@ -1,11 +1,9 @@
-from django.contrib.auth import login, logout, authenticate
-from rest_framework import permissions
-from rest_framework import status
-from rest_framework import viewsets
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_json_api import serializers
+from django.contrib.auth import login, logout, authenticate  # type: ignore
+from rest_framework import permissions, status, viewsets  # type: ignore
+from rest_framework.permissions import AllowAny  # type: ignore
+from rest_framework.response import Response  # type: ignore
+from rest_framework.views import APIView  # type: ignore
+from rest_framework_json_api import serializers  # type: ignore
 
 from core.models import User
 

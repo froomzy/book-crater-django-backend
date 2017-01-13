@@ -1,9 +1,11 @@
-from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.contrib.auth.models import PermissionsMixin
-from django.db import models
+from typing import List
+
+from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager  # type: ignore
+from django.contrib.auth.models import PermissionsMixin  # type: ignore
+from django.db import models  # type: ignore
 
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _  # type: ignore
 
 
 class UserManager(BaseUserManager):
@@ -52,7 +54,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = []  # type: List
 
     objects = UserManager()
 

@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 import core.models
-from django.db import migrations, models
+from django.db import migrations, models  # type: ignore
 import django.utils.timezone
 
 
