@@ -14,5 +14,6 @@ requests
 beautifulsoup4
 lxml
 raven
+gunicorn
 
 # Local Libraries
