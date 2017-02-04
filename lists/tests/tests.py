@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup  # type: ignore
 from django.core import mail  # type: ignore
 from django.core.exceptions import ValidationError  # type: ignore
+from django.core.management import call_command
 from django.template import Context  # type: ignore
 from django.template.loader import get_template  # type: ignore
 from django.test import TestCase  # type: ignore
@@ -380,3 +381,17 @@ class PurchaseListEmailTests(TestCase):
         self.assertEqual(mail.outbox[0].alternatives[0][1], 'text/html')
         soup = BeautifulSoup(mail.outbox[0].alternatives[0][0], 'lxml')
         self.assertEqual(0, len(soup.select('.book-item')))
+
+
+class PurchaseOrderGenerationJobTests(TestCase):
+
+    def test_no_lists_generates_no_emails(self):
+        call_command('generate_purchase_orders')
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_one_list_generates_one_email(self):
+        user = User.objects.create_user(email='user@userville.com', password='Nope')
+        list = Lists.objects.create(title='Simple Test', owner=user, currency=NZD, spend=50.00, day_of_month=5)
+        wishlist = WishLists.objects.create(url='https://www.bookdepository.com/wishlists/WF90LH', list=list)
+        call_command('generate_purchase_orders')
+        self.assertEqual(len(mail.outbox), 1)
