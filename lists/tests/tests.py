@@ -3,6 +3,7 @@ from pathlib import Path
 
 import requests
 from bs4 import BeautifulSoup  # type: ignore
+from django.conf import settings
 from django.core import mail  # type: ignore
 from django.core.exceptions import ValidationError  # type: ignore
 from django.core.management import call_command
@@ -323,6 +324,15 @@ class PurchaseListEmailTests(TestCase):
         self.assertEqual(mail.outbox[0].to, recipients)
         self.assertEqual(mail.outbox[0].alternatives[0][0], html_content)
         self.assertEqual(mail.outbox[0].alternatives[0][1], 'text/html')
+
+    def test_sender_email_address(self):
+        subject = 'Hello'
+        text_content = 'This is an email!'
+        html_content = '<p>This is an email!</p>'
+        recipients = ['dylan@dylan.com']
+        send_email(subject=subject, recipients=recipients, text_content=text_content, html_content=html_content)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].from_email, settings.DEFAULT_FROM_EMAIL)
 
     def test_send_email_with_template_content(self):
         subject = 'Template Email'
