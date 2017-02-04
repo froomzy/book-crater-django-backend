@@ -7,6 +7,6 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Sentry Local Settings
 
-RAVEN_CONFIG.update({
-    'environment': 'Local'
-})
+# RAVEN_CONFIG.update({
+#     'environment': 'Local'
+# })

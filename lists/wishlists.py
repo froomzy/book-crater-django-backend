@@ -1,10 +1,10 @@
-from typing import List, Tuple
+from typing import List
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # type: ignore
 from requests import HTTPError
 
-from lists.constants import NZD, Currency, GBP, CZK
+from lists.constants import Currency, BOOK_DEPOSITORY_ROOT_URL
 from lists.models import Books, Prices
 
 
@@ -36,12 +36,12 @@ def _retrieve_wishlist(url: str, currency: Currency) -> List[BeautifulSoup]:
         pages.append(page)
         if not next:
             break
-        next_url = next[0]['href']
+        next_url = '{root}{next}'.format(root=BOOK_DEPOSITORY_ROOT_URL, next=next[0]['href'])
     return pages
 
 
 def _extract_books(wishlist_pages: List[BeautifulSoup]) -> List[BeautifulSoup]:
-    books = []
+    books = []  # type: List[BeautifulSoup]
     for page in wishlist_pages:
         books += page.select('div.book-item')
     return books
@@ -51,6 +51,7 @@ def _calculate_price(price_string: str, currency: Currency) -> float:
     price_string = price_string.splitlines()[0].replace(',', '.')
     numbers = price_string[currency.string_slice]
     return float(numbers)
+
 
 def _create_book(book: BeautifulSoup, currency: Currency) -> Books:
     """Create a Books from html."""
@@ -62,7 +63,7 @@ def _create_book(book: BeautifulSoup, currency: Currency) -> Books:
     else:
         new_book = Books.objects.create(isbn=isbn, title=title)
     prices = book.select('div.item-info div.price-wrap p.price')
-    price = 0
+    price = 0.0
     if prices:
         price = _calculate_price(price_string=prices[0].text.strip(), currency=currency)
     Prices.objects.set_price(currency=currency, price=new_book.prices, cost=price)

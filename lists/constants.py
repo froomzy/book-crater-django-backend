@@ -1,12 +1,12 @@
 # Currencies
 class Currency:
-    def __init__(self, name, abbreviation, slice, format):
+    def __init__(self, name: str, abbreviation: str, slice: slice, format: str) -> None:
         self.abbreviation = abbreviation
         self.name = name
         self.string_slice = slice
         self.string_format = format
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '{name} ({abbreviation})'.format(abbreviation=self.abbreviation, name=self.name)
 
 NZD = Currency(name='New Zealand Dollars', abbreviation='NZD', slice=slice(3, None, None), format='NZ${price:.2f}')
@@ -20,3 +20,5 @@ CURRENCIES = {
     'GBP': GBP,
     'CZK': CZK,
 }
+
+BOOK_DEPOSITORY_ROOT_URL = 'https://www.bookdepository.com'

@@ -1,15 +1,13 @@
-from decimal import Decimal, Context
+from decimal import Decimal
+from typing import List
 
-from django.template import Context as TemplateContext
-
-from django.template.loader import get_template
+from django.template import Context as TemplateContext  # type: ignore
+from django.template.loader import get_template  # type: ignore
 
 from core.emails import send_email
 from core.models import User
 from lists.constants import CURRENCIES
 from lists.models import Lists, Books
-from typing import List
-
 from lists.wishlists import process_wishlist
 
 
@@ -18,17 +16,17 @@ def generate_purchase_list(list: Lists) -> List[Books]:
     available_spend = Decimal(list.spend)
     currency = CURRENCIES[list.currency]
     selected_books = []
-    isbns = []
+    isbns = []  # type: List[str]
     for wishlist in wishlists:
         isbns += process_wishlist(url=wishlist.url, currency=currency)
-    isbns = set(isbns)
+    isbns_set = set(isbns)
     while True:
-        books = set(Books.objects.with_isbn_in(isbns=isbns).price_less_than(price=available_spend, currency=currency))
+        books = set(Books.objects.with_isbn_in(isbns=isbns_set).price_less_than(price=available_spend, currency=currency))
         if len(books) == 0:
             break
         book = books.pop()
         selected_books.append(book)
-        isbns.remove(book.isbn)
+        isbns_set.remove(book.isbn)
         available_spend -= book.prices.get_price_for_currency(currency=currency)
     return selected_books
 
@@ -40,7 +38,6 @@ def _create_context(list: Lists, books: List[Books], user: User) -> TemplateCont
         new_book = {}
         new_book['title'] = book.title
         new_book['isbn'] = book.isbn
-        print(currency.string_format, book.prices.get_price_for_currency(currency=currency))
         new_book['price'] = currency.string_format.format(price=book.prices.get_price_for_currency(currency=currency))
         new_book['image'] = 'https://d1w7fb2mkkr3kw.cloudfront.net/assets/images/book/mid/{first}/{second}/{isbn}.jpg'.format(
             first=book.isbn[0:4],
@@ -56,19 +53,19 @@ def _create_context(list: Lists, books: List[Books], user: User) -> TemplateCont
     })
     return context
 
-def _generate_text_content(context: TemplateContext):
+def _generate_text_content(context: TemplateContext) -> str:
     template = get_template('purchase-list-email.txt')
     rendered = template.render(context=context)
     return rendered
 
 
-def _generate_html_content(context: TemplateContext):
+def _generate_html_content(context: TemplateContext) -> str:
     template = get_template('purchase-list-email.html')
     rendered = template.render(context=context)
     return rendered
 
 
-def send_purchase_list_email(list: Lists, books: List[Books], user: User):
+def send_purchase_list_email(list: Lists, books: List[Books], user: User) -> None:
     context = _create_context(list=list, books=books, user=user)
     recipients = [user.email]
     subject = 'Monthly Purchase List From Book Crater'

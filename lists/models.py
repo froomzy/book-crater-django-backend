@@ -1,20 +1,21 @@
 from typing import List
 
-from django.core.exceptions import ValidationError
-from django.db import models
+from decimal import Decimal
+from django.core.exceptions import ValidationError  # type: ignore
+from django.db import models  # type: ignore
 
 from core.models import User
 from lists.constants import NZD, GBP, USD, Currency, CZK
 
 
-class BooksQuerySet(models.QuerySet):
-    def with_isbn(self, isbn: str):
+class BooksQuerySet(models.QuerySet) :
+    def with_isbn(self, isbn: str) -> models.QuerySet:
         return self.filter(isbn=isbn)
 
-    def with_isbn_in(self, isbns: List[str]):
+    def with_isbn_in(self, isbns: List[str]) -> models.QuerySet:
         return self.filter(isbn__in=isbns)
 
-    def price_less_than(self, price: float, currency: Currency):
+    def price_less_than(self, price: float, currency: Currency) -> models.QuerySet:
         return {
             NZD: self.filter(prices__nz_dollars__lt=price),
             GBP: self.filter(prices__uk_pounds__lt=price),
@@ -22,7 +23,7 @@ class BooksQuerySet(models.QuerySet):
             CZK: self.filter(prices__cz_koruna__lt=price),
         }[currency]
 
-    def price_less_than_or_equal(self, price: float, currency: Currency):
+    def price_less_than_or_equal(self, price: float, currency: Currency) -> models.QuerySet:
         return {
             NZD: self.filter(prices__nz_dollars__lte=price),
             GBP: self.filter(prices__uk_pounds__lte=price),
@@ -32,7 +33,7 @@ class BooksQuerySet(models.QuerySet):
 
 
 class BooksManager(models.Manager):
-    def create(self, isbn: str, title: str):
+    def create(self, isbn: str, title: str) -> 'Books':
         book = Books()
         book.isbn = isbn
         book.title = title
@@ -54,7 +55,7 @@ class Books(models.Model):
 
     objects = BooksManager.from_queryset(BooksQuerySet)()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '{title} ({isbn})'.format(title=self.title, isbn=self.isbn)
 
 
@@ -63,13 +64,13 @@ class PricesQuerySet(models.QuerySet):
 
 
 class PricesManager(models.Manager):
-    def create(self, book: Books):
+    def create(self, book: Books) -> 'Prices':
         price = Prices()
         price.book = book
         price.save()
         return price
 
-    def set_price(self, currency, price, cost):
+    def set_price(self, currency: Currency, price: 'Prices', cost: float) -> None:
         {
             NZD: self.set_nzd_price,
             GBP: self.set_gbp_price,
@@ -77,22 +78,22 @@ class PricesManager(models.Manager):
             CZK: self.set_czk_price,
         }.get(currency)(price, cost)
 
-    def set_nzd_price(self, price: 'Prices', cost: float):
+    def set_nzd_price(self, price: 'Prices', cost: float) -> 'Prices':
         price.nz_dollars = cost
         price.save()
         return price
 
-    def set_gbp_price(self, price: 'Prices', cost: float):
+    def set_gbp_price(self, price: 'Prices', cost: float) -> 'Prices':
         price.uk_pounds = cost
         price.save()
         return price
 
-    def set_usd_price(self, price: 'Prices', cost: float):
+    def set_usd_price(self, price: 'Prices', cost: float) -> 'Prices':
         price.us_dollars = cost
         price.save()
         return price
 
-    def set_czk_price(self, price: 'Prices', cost: float):
+    def set_czk_price(self, price: 'Prices', cost: float) -> 'Prices':
         price.cz_koruna = cost
         price.save()
         return price
@@ -111,10 +112,10 @@ class Prices(models.Model):
 
     objects = PricesManager.from_queryset(PricesQuerySet)()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Prices for {book}'.format(book=self.book)
 
-    def get_price_for_currency(self, currency: Currency) -> float:
+    def get_price_for_currency(self, currency: Currency) -> Decimal:
         return {
             NZD: self.nz_dollars,
             USD: self.us_dollars,
@@ -123,19 +124,19 @@ class Prices(models.Model):
         }[currency]
 
 
-def _validate_day_of_month(day_of_month):
+def _validate_day_of_month(day_of_month: int) -> None:
     if 0 < day_of_month <= 28:
         return
     raise ValidationError('Day of Month must be between 1 and 28')
 
 
 class ListsQuerySet(models.QuerySet):
-    def for_owner(self, user: User):
+    def for_owner(self, user: User) -> models.QuerySet:
         return self.filter(owner=user)
 
 
 class ListsManager(models.Manager):
-    def create(self, title: str, currency: Currency, spend: float, day_of_month: int, owner: User):
+    def create(self, title: str, currency: Currency, spend: float, day_of_month: int, owner: User) -> 'Lists':
         list = Lists()
         list.title = title
         list.currency = currency.abbreviation
@@ -159,12 +160,12 @@ class Lists(models.Model):
 
     objects = ListsManager.from_queryset(ListsQuerySet)()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'List {title} belonging to {user}'.format(title=self.title, user=self.owner)
 
 
 class WishListQuerySet(models.QuerySet):
-    def for_list(self, list: Lists):
+    def for_list(self, list: Lists) -> models.QuerySet:
         return self.filter(list=list)
 
 
@@ -187,5 +188,5 @@ class WishLists(models.Model):
 
     objects = WishListManager.from_queryset(WishListQuerySet)()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Wishlist at {url}'.format(url=self.url)
