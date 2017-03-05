@@ -17,7 +17,7 @@ from core.models import User
 from lists.constants import NZD, GBP, CZK, USD
 from lists.lists import generate_purchase_list, send_purchase_list_email
 from lists.models import _validate_day_of_month, Lists, WishLists, Books, Prices
-from lists.wishlists import process_wishlist, _retrieve_wishlist, _extract_books, _calculate_price
+from lists.wishlists import process_wishlist, _retrieve_wishlist, _extract_books, _calculate_price, _create_book
 
 one_hundred_books_isbns = [
     '9780141361796',
@@ -122,6 +122,43 @@ one_hundred_books_isbns = [
     '9781408708989'
 ]
 
+book = """<div class="book-item" itemscope="" itemtype="http://schema.org/Book">
+<div class="item-img">
+<a href="/Fantastic-Beasts-Where-Find-Them-J-K-Rowling/9781408708989" itemprop="url">
+<img alt="Fantastic Beasts and Where to Find Them" class="lazy" data-lazy="https://d3by36x8sj6cra.cloudfront.net/assets/images/book/mid/9781/4087/9781408708989.jpg"/>
+<div class="savings-splat">51%<br/>off</div>
+</a>
+</div>
+<meta content="9781408708989" itemprop="isbn"/>
+<meta content="Fantastic Beasts and Where to Find Them" itemprop="name"/>
+<meta content="J. K. Rowling" itemprop="contributor"/>
+<div class="item-info">
+<h3 class="title">
+<a href="/Fantastic-Beasts-Where-Find-Them-J-K-Rowling/9781408708989">
+                    Fantastic Beasts and Where to Find Them<br/>
+</a>
+</h3>
+<p class="author">
+<a href="/author/J-K-Rowling" itemprop="author">J. K. Rowling</a>
+</p>
+<p class="published" itemprop="datePublished">19 Nov 2016</p>
+<p class="format">Hardback</p>
+<div class="price-wrap">
+<p class="price">
+                        NZ$20.31
+                             <span class="rrp">NZ$41.93</span>
+</p>
+<p class="price-save">
+                            Save NZ$21.62</p>
+</div>
+</div>
+<div class="item-actions">
+<div class="btn-wrap">
+<a class="btn btn-sm btn-primary add-to-basket" data-currency="NZD" data-isbn="9781408708989" data-price="20.31" data-ref="grid-view" href="/basket/addisbn/isbn13/9781408708989" rel="nofollow">Add to basket</a>
+</div>
+</div>
+</div>"""
+
 
 class ProcessListTests(TestCase):
     def test_wishlist_with_one_book(self):
@@ -217,6 +254,12 @@ class ProcessListTests(TestCase):
                         '''
         price = _calculate_price(price_string=price_string, currency=USD)
         self.assertEqual(price, 17.27)
+
+    def test_create_book_creates_book_from_html(self):
+        bs_book = BeautifulSoup(book, 'lxml')
+        new_book = _create_book(book=bs_book, currency=NZD)
+        self.assertEqual(new_book.isbn, '9781408708989')
+        self.assertEqual(new_book.prices.nz_dollars, 20.31)
 
 
 class ListsTests(TestCase):
