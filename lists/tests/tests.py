@@ -15,6 +15,7 @@ from requests import HTTPError
 from core.emails import send_email
 from core.models import User
 from lists.constants import NZD, GBP, CZK, USD
+from lists.good_reads_api import GoodReadsApi
 from lists.lists import generate_purchase_list, send_purchase_list_email
 from lists.models import _validate_day_of_month, Lists, WishLists, Books, Prices
 from lists.wishlists import process_wishlist, _retrieve_wishlist, _extract_books, _calculate_price, _create_book
@@ -448,3 +449,17 @@ class PurchaseOrderGenerationJobTests(TestCase):
         wishlist = WishLists.objects.create(url='https://www.bookdepository.com/wishlists/WF90LH', list=list)
         call_command('generate_purchase_orders')
         self.assertEqual(len(mail.outbox), 1)
+
+
+class GoodReadsApiTests(TestCase):
+
+    def test_book_in_series_gets_correct_details(self):
+        book = Books.objects.create(isbn='9780812511819', title='The Eye of the World')
+        Prices.objects.set_nzd_price(price=book.prices, cost=10.00)
+        good_reads_api = GoodReadsApi()
+        series, order = good_reads_api.get_books_series(book=book)
+        self.assertEqual(series, 'Wheel Of Time')
+        self.assertEqual(order, 1)
+
+    # def test_book_not_in_series_gets_no_series_details(self):
+    #     pass

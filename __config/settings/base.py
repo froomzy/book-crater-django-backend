@@ -12,12 +12,15 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 
 import os
 from pathlib import Path
+import configparser
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 # import raven
 
 BASE_PATH = Path(__file__).parents[2]
 BASE_DIR = str(BASE_PATH)
+config = configparser.ConfigParser(allow_no_value=True)
+config.read(filenames=['config.ini'])
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
@@ -320,3 +323,6 @@ LOGGING = {
         },
     },
 }
+
+# Goodreads API settings
+GOODREADS_API_KEY = config.get('keys', 'goodreads')

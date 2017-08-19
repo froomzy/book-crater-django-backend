@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError  # type: ignore
 from django.db import models  # type: ignore
 
 from core.models import User
-from lists.constants import NZD, GBP, USD, Currency, CZK
+from lists.constants import NZD, GBP, USD, Currency, CZK, NO_SERIES_TOKEN
 
 
 class BooksQuerySet(models.QuerySet) :
@@ -31,6 +31,15 @@ class BooksQuerySet(models.QuerySet) :
             CZK: self.filter(prices__cz_koruna__lte=price),
         }[currency]
 
+    def has_unknown_series(self) -> models.QuerySet:
+        return self.filter(series__null=True)
+
+    def has_no_series(self) -> models.QuerySet:
+        return self.filter(series=NO_SERIES_TOKEN)
+
+    def part_of_series(self, series: str) -> models.QuerySet:
+        return self.filter(series=series)
+
 
 class BooksManager(models.Manager):
     def create(self, isbn: str, title: str) -> 'Books':
@@ -44,10 +53,22 @@ class BooksManager(models.Manager):
         book.prices = prices
         return book
 
+    def set_series(self, book: 'Books', series: str, series_order: int) -> 'Books':
+        book.series = series
+        book.series_order = series_order
+        book.save()
+        return book
+
+    def set_no_series(self, book: 'Books') -> 'Books':
+        book.series = NO_SERIES_TOKEN
+        return book
+
 
 class Books(models.Model):
     isbn = models.CharField(primary_key=True, max_length=13, verbose_name='ISBN')
     title = models.CharField(max_length=1000, blank=False, null=False)
+    series = models.CharField(max_length=1000, blank=True, null=True)
+    series_order = models.IntegerField(blank=True, null=True)
 
     class Meta:
         verbose_name = 'book'

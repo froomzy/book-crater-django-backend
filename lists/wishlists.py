@@ -43,6 +43,7 @@ def _retrieve_wishlist(url: str, currency: Currency) -> List[BeautifulSoup]:
 def _extract_books(wishlist_pages: List[BeautifulSoup]) -> List[BeautifulSoup]:
     books = []  # type: List[BeautifulSoup]
     for page in wishlist_pages:
+        # TODO (Dylan): Change this to grab the actual HTML of the book from it's own page
         books += page.select('div.book-item')
     return books
 
@@ -55,6 +56,7 @@ def _calculate_price(price_string: str, currency: Currency) -> float:
 
 def _create_book(book: BeautifulSoup, currency: Currency) -> Books:
     """Create a Books from html."""
+    # TODO (Dylan): Change the book generation to work on the whole Book page HTML rather than the Wishlist HTML
     isbn = book.select('meta[itemprop="isbn"]')[0]['content']
     title = book.select('div.item-info h3 a')[0].text.strip()
     exiting_books = Books.objects.with_isbn(isbn=isbn)
@@ -74,11 +76,11 @@ def process_wishlist(url: str, currency: Currency) -> List[str]:
     """Given a url to a Wishlist, return a list of ISBNs in that wishlist."""
     results_list = []
     try:
-        wishlist_page = _retrieve_wishlist(url=url, currency=currency)
+        wishlist_pages = _retrieve_wishlist(url=url, currency=currency)
     except HTTPError:
         # TODO (Dylan): Need to log out here
         return []
-    books = _extract_books(wishlist_pages=wishlist_page)
+    books = _extract_books(wishlist_pages=wishlist_pages)
     for book in books:
         new_book = _create_book(book=book, currency=currency)
         results_list.append(new_book.isbn)

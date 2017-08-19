@@ -22,3 +22,6 @@ CURRENCIES = {
 }
 
 BOOK_DEPOSITORY_ROOT_URL = 'https://www.bookdepository.com'
+
+# NOTE (Dylan): This is a terrible idea. But my brain isn't coming up with a better way to donate no series as different from unknown, which I want as None
+NO_SERIES_TOKEN = '=_=-_[-KJ;JenpDjulLKsalsekLgjj)e #9__# (3 Jd( 3jkLD(D '
